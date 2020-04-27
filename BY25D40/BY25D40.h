@@ -4,18 +4,18 @@
 /**
  * *****************************************************
  * 
- * set BY25D40's PINs by modify the following macros
+ * set BY25D40's PINs macro before include this header
  * 
  * *****************************************************
 */
 
-#include "spi1.h"
+#if !defined (BY25D40_CS_HIGH) || !defined (BY25D40_CS_LOW)
+#error "BY25D40: please define pin 'CS' !"
+#endif
 
-#define BY25D40_CS_HIGH() NSS(1)
-#define BY25D40_CS_LOW() NSS(0)
-
-#define BY25D40_WP_HIGH()
-#define BY25D40_WP_LOW()
+#if !defined (BY25D40_WP_HIGH) || !defined (BY25D40_WP_LOW)
+#error "BY25D40: please define pin 'WP' !"
+#endif
 
 //***********************************************************
 

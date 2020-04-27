@@ -63,11 +63,11 @@
 
 //---------- internal macro --------------
 
-#define CS_LOW() BY25D40_CS_LOW()
-#define CS_HIGH() BY25D40_CS_HIGH()
+#define CS_LOW() BY25D40_CS_LOW
+#define CS_HIGH() BY25D40_CS_HIGH
 
-#define WP_LOW() BY25D40_WP_LOW()
-#define WP_HIGH() BY25D40_WP_HIGH()
+#define WP_LOW() BY25D40_WP_LOW
+#define WP_HIGH() BY25D40_WP_HIGH
 
 //------------------- internal func -------------------
 
