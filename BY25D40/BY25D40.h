@@ -9,7 +9,7 @@
  * *****************************************************
 */
 
-#include <config.h>
+#include <BY25D40_config.h>
 
 #if !defined (BY25D40_CS_HIGH) || !defined (BY25D40_CS_LOW)
 #error "BY25D40: please define pin 'CS' !"
