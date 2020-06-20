@@ -4,22 +4,24 @@
 /**
  * *****************************************************
  * 
- * set BY25D40's PINs macro in header file "Drivers_config.h"
+ * implement pin interface at "BY25D40_conf.h"
  * 
  * *****************************************************
 */
 
-#include <Drivers_config.h>
+#include <BY25D40_conf.h>
 
 #if !defined (BY25D40_CS_HIGH) || !defined (BY25D40_CS_LOW)
-#error "BY25D40: please define pin 'CS' !"
+#error "macro 'BY25D40_CS_HIGH()' and 'BY25D40_CS_LOW()' must be implemented"
 #endif
 
 #if !defined (BY25D40_WP_HIGH) || !defined (BY25D40_WP_LOW)
-#error "BY25D40: please define pin 'WP' !"
+#error "macro 'BY25D40_WP_HIGH()' and 'BY25D40_WP_LOW()' must be implemented"
 #endif
 
 //***********************************************************
+
+#include <stdint.h>
 
 /**
  * functions define
