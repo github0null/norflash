@@ -9,14 +9,6 @@
 #undef false
 #define false 0
 
-/**
- * Status register
- * ---+-----+-----+-----+-----+-----+-----+-----+
- * S7 | S6  |  S5 |  S4 |  S3 |  S2 | S1  | S0  |
- * ---+-----+-----+-----+-----+-----+-----+-----+
- * SRP| SEC | TB  | BP2 | BP1 | BP0 | WEL | WIP |
- * ---+-----+-----+-----+-----+-----+-----+-----+
-*/
 #define STATUS_WR_BUSY 0x01
 #define STATUS_WR_ENABLE 0x02
 #define STATUS_TB_PROTECT 0x20
