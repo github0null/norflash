@@ -1,4 +1,4 @@
-#include "W25QXX.h"
+#include "BY25DXX.h"
 
 #define PAGE_SIZE 256
 #define SECTOR_SIZE 4096
@@ -22,8 +22,6 @@
 
 #define CMD_RD_STATUS 0x05
 #define CMD_WR_STATUS 0x01
-#define CMD_RD_STATUS_2 0x35
-#define CMD_WR_STATUS_2 0x31
 
 #define CMD_RD_DATA 0x03
 #define CMD_WR_DATA 0x02
@@ -37,15 +35,15 @@
 
 //---------- internal macro --------------
 
-#define CS_LOW() W25QXX_CS_LOW()
-#define CS_HIGH() W25QXX_CS_HIGH()
+#define CS_LOW() BY25DXX_CS_LOW()
+#define CS_HIGH() BY25DXX_CS_HIGH()
 
-#define WP_LOW() W25QXX_WP_LOW()
-#define WP_HIGH() W25QXX_WP_HIGH()
+#define WP_LOW() BY25DXX_WP_LOW()
+#define WP_HIGH() BY25DXX_WP_HIGH()
 
 //------------------- internal func -------------------
 
-W25QXX_SPIHook SPI_SendByte;
+BY25DXX_SPIHook SPI_SendByte;
 
 void EnableWrite()
 {
@@ -113,7 +111,7 @@ uint8_t IsEmptyPage(uint32_t addr)
     return true;
 }
 
-void W25QXX_WritePage(uint32_t addr, uint8_t *buf, uint16_t size)
+void BY25DXX_WritePage(uint32_t addr, uint8_t *buf, uint16_t size)
 {
     uint16_t index;
     WaitBusy();
@@ -128,35 +126,26 @@ void W25QXX_WritePage(uint32_t addr, uint8_t *buf, uint16_t size)
 
 //-----------------------------------------------
 
-W25QXX_ErrorCode W25QXX_Init(W25QXX_SPIHook spiHook)
+BY25DXX_ErrorCode BY25DXX_Init(BY25DXX_SPIHook spiHook)
 {
-    W25QXX_DeviceInfo devInfo;
-    uint8_t status;
+    BY25DXX_DeviceInfo devInfo;
 
     SPI_SendByte = spiHook;
 
-    W25QXX_GetDeviceInfo(&devInfo);
+    BY25DXX_GetDeviceInfo(&devInfo);
 
-#ifdef W25QXX_DEV_ID
-    if (devInfo.vendorID != W25QXX_VENDOR_ID || devInfo.devID != W25QXX_DEV_ID)
-        return W25QXX_ERR_FAILED;
+#ifdef BY25DXX_DEV_ID
+    if (devInfo.vendorID != BY25DXX_VENDOR_ID || devInfo.devID != BY25DXX_DEV_ID)
+        return BY25DXX_ERR_FAILED;
 #else
-    if (devInfo.vendorID != W25QXX_VENDOR_ID)
-        return W25QXX_ERR_FAILED;
+    if (devInfo.vendorID != BY25DXX_VENDOR_ID)
+        return BY25DXX_ERR_FAILED;
 #endif
 
-    // set SEC, TAB bits to 0
-    status = ReadStatus(CMD_RD_STATUS);
-    WriteStatus(CMD_WR_STATUS, status & 0x1F);
-
-    // set CMP bit to 0
-    status = ReadStatus(CMD_RD_STATUS_2);
-    WriteStatus(CMD_WR_STATUS_2, status & 0xBF);
-
-    return W25QXX_ERR_NONE;
+    return BY25DXX_ERR_NONE;
 }
 
-uint8_t W25QXX_ReadByte(uint32_t addr)
+uint8_t BY25DXX_ReadByte(uint32_t addr)
 {
     uint8_t dat;
     WaitBusy();
@@ -168,10 +157,10 @@ uint8_t W25QXX_ReadByte(uint32_t addr)
     return dat;
 }
 
-void W25QXX_WriteByte(uint32_t addr, uint8_t dat)
+void BY25DXX_WriteByte(uint32_t addr, uint8_t dat)
 {
     if (!IsEmptyPage(addr)) // is not a empty page
-        W25QXX_Erase(addr, W25QXX_ERASE_SECTOR);
+        BY25DXX_Erase(addr, BY25DXX_ERASE_SECTOR);
 
     WaitBusy();
     EnableWrite();
@@ -182,21 +171,21 @@ void W25QXX_WriteByte(uint32_t addr, uint8_t dat)
     CS_HIGH();
 }
 
-uint16_t W25QXX_ReadWord(uint32_t addr)
+uint16_t BY25DXX_ReadWord(uint32_t addr)
 {
-    uint16_t dat = W25QXX_ReadByte(addr + 1);
-    return (dat << 8) | (uint16_t)W25QXX_ReadByte(addr);
+    uint16_t dat = BY25DXX_ReadByte(addr + 1);
+    return (dat << 8) | (uint16_t)BY25DXX_ReadByte(addr);
 }
 
-void W25QXX_WriteWord(uint32_t addr, uint16_t word)
+void BY25DXX_WriteWord(uint32_t addr, uint16_t word)
 {
     uint8_t buf[2];
     buf[0] = (uint8_t)word;
     buf[1] = (uint8_t)(word >> 8);
-    W25QXX_WriteBytes(addr, buf, 2);
+    BY25DXX_WriteBytes(addr, buf, 2);
 }
 
-void W25QXX_ReadBytes(uint32_t addr, uint8_t *buf, uint32_t size)
+void BY25DXX_ReadBytes(uint32_t addr, uint8_t *buf, uint32_t size)
 {
     WaitBusy();
     CS_LOW();
@@ -212,20 +201,20 @@ void W25QXX_ReadBytes(uint32_t addr, uint8_t *buf, uint32_t size)
     CS_HIGH();
 }
 
-void W25QXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t size)
+void BY25DXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t size)
 {
     uint16_t pageRemain = PAGE_SIZE - (addr % PAGE_SIZE);
     uint32_t secAddr;
 
     for (secAddr = addr - (addr % SECTOR_SIZE); secAddr < addr + size; secAddr += SECTOR_SIZE)
-        W25QXX_Erase(secAddr, W25QXX_ERASE_SECTOR);
+        BY25DXX_Erase(secAddr, BY25DXX_ERASE_SECTOR);
 
     if (size <= pageRemain)
         pageRemain = size;
 
     while (1)
     {
-        W25QXX_WritePage(addr, buf, pageRemain);
+        BY25DXX_WritePage(addr, buf, pageRemain);
 
         if (size == pageRemain)
         {
@@ -245,7 +234,7 @@ void W25QXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t size)
     }
 }
 
-void W25QXX_Erase(uint32_t addr, W25QXX_EraseType type)
+void BY25DXX_Erase(uint32_t addr, BY25DXX_EraseType type)
 {
     WaitBusy();
     EnableWrite();
@@ -255,24 +244,24 @@ void W25QXX_Erase(uint32_t addr, W25QXX_EraseType type)
     CS_HIGH();
 }
 
-void W25QXX_LockProtectBits(void)
+void BY25DXX_LockProtectBits(void)
 {
     WriteStatus(CMD_WR_STATUS, ReadStatus(CMD_RD_STATUS) | 0x80);
     WP_LOW(); // lock
 }
 
-void W25QXX_UnlockProtectBits(void)
+void BY25DXX_UnlockProtectBits(void)
 {
     WP_HIGH(); // Unlock
     WriteStatus(CMD_WR_STATUS, ReadStatus(CMD_RD_STATUS) | 0x7F);
 }
 
-W25QXX_ProtectSize W25QXX_GetProtectSize(void)
+BY25DXX_ProtectSize BY25DXX_GetProtectSize(void)
 {
-    return (W25QXX_ProtectSize)GET_PROTECT_BLOCK(ReadStatus(CMD_RD_STATUS));
+    return (BY25DXX_ProtectSize)GET_PROTECT_BLOCK(ReadStatus(CMD_RD_STATUS));
 }
 
-void W25QXX_SetProtectSize(W25QXX_ProtectSize size)
+void BY25DXX_SetProtectSize(BY25DXX_ProtectSize size)
 {
     uint8_t status = ReadStatus(CMD_RD_STATUS);
 
@@ -283,12 +272,12 @@ void W25QXX_SetProtectSize(W25QXX_ProtectSize size)
     WriteStatus(CMD_WR_STATUS, status);
 }
 
-void W25QXX_ClearProtection(void)
+void BY25DXX_ClearProtection(void)
 {
-    W25QXX_SetProtectSize((W25QXX_ProtectSize)0x0);
+    BY25DXX_SetProtectSize((BY25DXX_ProtectSize)0x0);
 }
 
-void W25QXX_GotoSleep(void)
+void BY25DXX_GotoSleep(void)
 {
     WaitBusy();
     CS_LOW();
@@ -296,14 +285,14 @@ void W25QXX_GotoSleep(void)
     CS_HIGH();
 }
 
-void W25QXX_Wakeup(void)
+void BY25DXX_Wakeup(void)
 {
     CS_LOW();
     SPI_SendByte(CMD_WAKEUP);
     CS_HIGH();
 }
 
-void W25QXX_GetDeviceInfo(W25QXX_DeviceInfo *info)
+void BY25DXX_GetDeviceInfo(BY25DXX_DeviceInfo *info)
 {
     WaitBusy();
 

@@ -1,6 +1,9 @@
 #ifndef _H_W25QXX
 #define _H_W25QXX
 
+#include <W25QXX_conf.h>
+#include <stdint.h>
+
 /**
  * *****************************************************
  * 
@@ -8,8 +11,6 @@
  * 
  * *****************************************************
 */
-
-#include <W25QXX_conf.h>
 
 #if !defined(W25QXX_CS_HIGH) || !defined(W25QXX_CS_LOW)
 #error "macro 'W25QXX_CS_HIGH()' and 'W25QXX_CS_LOW()' must be implemented"
@@ -19,15 +20,25 @@
 #error "macro 'W25QXX_WP_HIGH()' and 'W25QXX_WP_LOW()' must be implemented"
 #endif
 
-//***********************************************************
-
-#include <stdint.h>
-
-/**
- * functions define
-*/
+//--------------------------------------------------------------
 
 #define W25QXX_VENDOR_ID 0xEF
+
+#if defined(W25Q80)
+#define W25QXX_DEV_ID 0x13
+#elif defined(W25Q16)
+#define W25QXX_DEV_ID 0x14
+#elif defined(W25Q32)
+#define W25QXX_DEV_ID 0x15
+#elif defined(W25Q64)
+#define W25QXX_DEV_ID 0x16
+#elif defined(W25Q128)
+#define W25QXX_DEV_ID 0x17
+#else
+#warning "You should define a WinBond SPI Flash device series !"
+#endif
+
+//--------------------------------------------------------------
 
 typedef uint8_t (*W25QXX_SPIHook)(uint8_t);
 
@@ -42,14 +53,45 @@ typedef struct
 
 typedef enum
 {
-    W25QXX_PROTECT_NONE = 0x00U,    // 0
-    W25QXX_PROTECT_1_OF_64 = 0x01U, // 1/64
-    W25QXX_PROTECT_1_OF_32 = 0x02U, // 1/32
-    W25QXX_PROTECT_1_OF_16 = 0x03U, // 1/16
-    W25QXX_PROTECT_1_OF_8 = 0x04U,  // 1/8
-    W25QXX_PROTECT_1_OF_4 = 0x05U,  // 1/4
-    W25QXX_PROTECT_1_OF_2 = 0x06U,  // 1/2
-    W25QXX_PROTECT_ALL = 0x07U      // all
+    W25QXX_PROTECT_NONE = 0x00U,
+#if defined(W25Q80)
+    W25QXX_PROTECT_64KB = 0x01U,
+    W25QXX_PROTECT_128KB = 0x02U,
+    W25QXX_PROTECT_256KB = 0x03U,
+    W25QXX_PROTECT_512KB = 0x04U,
+    W25QXX_PROTECT_1MB = 0x07U
+#elif defined(W25Q16)
+    W25QXX_PROTECT_64KB = 0x01U,
+    W25QXX_PROTECT_128KB = 0x02U,
+    W25QXX_PROTECT_256KB = 0x03U,
+    W25QXX_PROTECT_512KB = 0x04U,
+    W25QXX_PROTECT_1MB = 0x05U,
+    W25QXX_PROTECT_2MB = 0x07U
+#elif defined(W25Q32)
+    W25QXX_PROTECT_64KB = 0x01U,
+    W25QXX_PROTECT_128KB = 0x02U,
+    W25QXX_PROTECT_256KB = 0x03U,
+    W25QXX_PROTECT_512KB = 0x04U,
+    W25QXX_PROTECT_1MB = 0x05U,
+    W25QXX_PROTECT_2MB = 0x06U,
+    W25QXX_PROTECT_4MB = 0x07U
+#elif defined(W25Q64)
+    W25QXX_PROTECT_128KB = 0x01U,
+    W25QXX_PROTECT_256KB = 0x02U,
+    W25QXX_PROTECT_512KB = 0x03U,
+    W25QXX_PROTECT_1MB = 0x04U,
+    W25QXX_PROTECT_2MB = 0x05U,
+    W25QXX_PROTECT_4MB = 0x06U,
+    W25QXX_PROTECT_8MB = 0x07U
+#elif defined(W25Q128)
+    W25QXX_PROTECT_256KB = 0x01U,
+    W25QXX_PROTECT_512KB = 0x02U,
+    W25QXX_PROTECT_1MB = 0x03U,
+    W25QXX_PROTECT_2MB = 0x04U,
+    W25QXX_PROTECT_4MB = 0x05U,
+    W25QXX_PROTECT_8MB = 0x06U,
+    W25QXX_PROTECT_16MB = 0x07U
+#endif
 } W25QXX_ProtectSize;
 
 typedef enum
@@ -62,7 +104,7 @@ typedef enum
 
 typedef enum
 {
-    W25QXX_ERR_OK = 0,
+    W25QXX_ERR_NONE = 0,
     W25QXX_ERR_FAILED = 1
 } W25QXX_ErrorCode;
 
