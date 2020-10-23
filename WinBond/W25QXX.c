@@ -113,6 +113,32 @@ uint8_t IsEmptyPage(uint32_t addr)
     return true;
 }
 
+uint8_t IsEmptySector(uint32_t addr, uint32_t size)
+{
+    uint32_t secRemain = SECTOR_SIZE - (addr % SECTOR_SIZE);
+
+    if (secRemain > size)
+        secRemain = size;
+
+    WaitBusy();
+    CS_LOW();
+    SPI_SendByte(CMD_RD_DATA);
+    SendAddr(addr);
+
+    while (secRemain--)
+    {
+        if (SPI_SendByte(CMD_NOP) != 0xFF)
+        {
+            CS_HIGH();
+            return false;
+        }
+    }
+
+    CS_HIGH();
+
+    return true;
+}
+
 void W25QXX_WritePage(uint32_t addr, uint8_t *buf, uint16_t size)
 {
     uint16_t index;
@@ -215,12 +241,39 @@ void W25QXX_ReadBytes(uint32_t addr, uint8_t *buf, uint32_t size)
 void W25QXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t size)
 {
     uint16_t pageRemain = PAGE_SIZE - (addr % PAGE_SIZE);
-    uint32_t secAddr;
+    uint32_t sectorRemain = SECTOR_SIZE - (addr % SECTOR_SIZE);
+    uint32_t chkAddr = addr, chkSize = size;
 
-    for (secAddr = addr - (addr % SECTOR_SIZE); secAddr < addr + size; secAddr += SECTOR_SIZE)
-        W25QXX_Erase(secAddr, W25QXX_ERASE_SECTOR);
+    // erase sector
 
-    if (size <= pageRemain)
+    if (chkSize < sectorRemain)
+        sectorRemain = chkSize;
+
+    while (1)
+    {
+        if (!IsEmptySector(chkAddr, sectorRemain))
+            W25QXX_Erase(chkAddr, W25QXX_ERASE_SECTOR);
+
+        if (chkSize == sectorRemain)
+        {
+            break; // done
+        }
+        else // chkSize > sectorRemain
+        {
+            chkAddr += sectorRemain;
+            chkSize -= sectorRemain;
+
+            // caculate next check size
+            if (chkSize > SECTOR_SIZE)
+                sectorRemain = SECTOR_SIZE;
+            else
+                sectorRemain = chkSize;
+        }
+    }
+
+    // write data
+
+    if (size < pageRemain)
         pageRemain = size;
 
     while (1)
@@ -237,8 +290,9 @@ void W25QXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t size)
             addr += pageRemain;
             size -= pageRemain;
 
-            if (size > 256)
-                pageRemain = 256;
+            // caculate next write size
+            if (size > PAGE_SIZE)
+                pageRemain = PAGE_SIZE;
             else
                 pageRemain = size;
         }
