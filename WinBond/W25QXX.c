@@ -45,37 +45,37 @@
 
 //------------------- internal func -------------------
 
-W25QXX_SPIHook SPI_SendByte;
+W25QXX_SPIHook __spi_send_byte;
 
 void EnableWrite()
 {
     CS_LOW();
-    SPI_SendByte(CMD_WR_EN);
+    __spi_send_byte(CMD_WR_EN);
     CS_HIGH();
 }
 
 void WaitBusy()
 {
     CS_LOW();
-    SPI_SendByte(CMD_RD_STATUS);
-    while ((SPI_SendByte(CMD_NOP) & STATUS_WR_BUSY))
+    __spi_send_byte(CMD_RD_STATUS);
+    while ((__spi_send_byte(CMD_NOP) & STATUS_WR_BUSY))
         ;
     CS_HIGH();
 }
 
 void SendAddr(uint32_t addr)
 {
-    SPI_SendByte((uint8_t)(addr >> 16));
-    SPI_SendByte((uint8_t)(addr >> 8));
-    SPI_SendByte((uint8_t)addr);
+    __spi_send_byte((uint8_t)(addr >> 16));
+    __spi_send_byte((uint8_t)(addr >> 8));
+    __spi_send_byte((uint8_t)addr);
 }
 
 uint8_t ReadStatus(uint8_t cmd)
 {
     uint8_t status;
     CS_LOW();
-    SPI_SendByte(cmd);
-    status = SPI_SendByte(CMD_NOP);
+    __spi_send_byte(cmd);
+    status = __spi_send_byte(CMD_NOP);
     CS_HIGH();
     return status;
 }
@@ -85,8 +85,8 @@ void WriteStatus(uint8_t cmd, uint8_t dat)
     WaitBusy();
     EnableWrite();
     CS_LOW();
-    SPI_SendByte(cmd);
-    SPI_SendByte(dat);
+    __spi_send_byte(cmd);
+    __spi_send_byte(dat);
     CS_HIGH();
 }
 
@@ -96,12 +96,12 @@ uint8_t IsEmptyPage(uint32_t addr)
 
     WaitBusy();
     CS_LOW();
-    SPI_SendByte(CMD_RD_DATA);
+    __spi_send_byte(CMD_RD_DATA);
     SendAddr(addr);
 
     while (pageRemain--)
     {
-        if (SPI_SendByte(CMD_NOP) != 0xFF)
+        if (__spi_send_byte(CMD_NOP) != 0xFF)
         {
             CS_HIGH();
             return false;
@@ -122,12 +122,12 @@ uint8_t IsEmptySector(uint32_t addr, uint32_t size)
 
     WaitBusy();
     CS_LOW();
-    SPI_SendByte(CMD_RD_DATA);
+    __spi_send_byte(CMD_RD_DATA);
     SendAddr(addr);
 
     while (secRemain--)
     {
-        if (SPI_SendByte(CMD_NOP) != 0xFF)
+        if (__spi_send_byte(CMD_NOP) != 0xFF)
         {
             CS_HIGH();
             return false;
@@ -145,10 +145,10 @@ void W25QXX_WritePage(uint32_t addr, uint8_t *buf, uint16_t size)
     WaitBusy();
     EnableWrite();
     CS_LOW();
-    SPI_SendByte(CMD_WR_DATA);
+    __spi_send_byte(CMD_WR_DATA);
     SendAddr(addr);
     for (index = 0; index < size; index++)
-        SPI_SendByte(buf[index]);
+        __spi_send_byte(buf[index]);
     CS_HIGH();
 }
 
@@ -159,7 +159,7 @@ W25QXX_ErrorCode W25QXX_Init(W25QXX_SPIHook spiHook)
     W25QXX_DeviceInfo devInfo;
     uint8_t status;
 
-    SPI_SendByte = spiHook;
+    __spi_send_byte = spiHook;
 
     W25QXX_GetDeviceInfo(&devInfo);
 
@@ -187,9 +187,9 @@ uint8_t W25QXX_ReadByte(uint32_t addr)
     uint8_t dat;
     WaitBusy();
     CS_LOW();
-    SPI_SendByte(CMD_RD_DATA);
+    __spi_send_byte(CMD_RD_DATA);
     SendAddr(addr);
-    dat = SPI_SendByte(CMD_NOP);
+    dat = __spi_send_byte(CMD_NOP);
     CS_HIGH();
     return dat;
 }
@@ -202,9 +202,9 @@ void W25QXX_WriteByte(uint32_t addr, uint8_t dat)
     WaitBusy();
     EnableWrite();
     CS_LOW();
-    SPI_SendByte(CMD_WR_DATA);
+    __spi_send_byte(CMD_WR_DATA);
     SendAddr(addr);
-    SPI_SendByte(dat);
+    __spi_send_byte(dat);
     CS_HIGH();
 }
 
@@ -226,12 +226,12 @@ void W25QXX_ReadBytes(uint32_t addr, uint8_t *buf, uint32_t size)
 {
     WaitBusy();
     CS_LOW();
-    SPI_SendByte(CMD_RD_DATA);
+    __spi_send_byte(CMD_RD_DATA);
     SendAddr(addr);
 
     while (size--)
     {
-        *buf = SPI_SendByte(CMD_NOP);
+        *buf = __spi_send_byte(CMD_NOP);
         buf++;
     }
 
@@ -304,7 +304,7 @@ void W25QXX_Erase(uint32_t addr, W25QXX_EraseType type)
     WaitBusy();
     EnableWrite();
     CS_LOW();
-    SPI_SendByte((uint8_t)type);
+    __spi_send_byte((uint8_t)type);
     SendAddr(addr);
     CS_HIGH();
 }
@@ -346,14 +346,14 @@ void W25QXX_GotoSleep(void)
 {
     WaitBusy();
     CS_LOW();
-    SPI_SendByte(CMD_GOTO_SLEEP);
+    __spi_send_byte(CMD_GOTO_SLEEP);
     CS_HIGH();
 }
 
 void W25QXX_Wakeup(void)
 {
     CS_LOW();
-    SPI_SendByte(CMD_WAKEUP);
+    __spi_send_byte(CMD_WAKEUP);
     CS_HIGH();
 }
 
@@ -363,36 +363,36 @@ void W25QXX_GetDeviceInfo(W25QXX_DeviceInfo *info)
 
     // read device id
     CS_LOW();
-    SPI_SendByte(CMD_RD_DEV_ID);
+    __spi_send_byte(CMD_RD_DEV_ID);
     SendAddr(0x0U);
-    info->vendorID = SPI_SendByte(CMD_NOP);
-    info->devID = SPI_SendByte(CMD_NOP);
+    info->vendorID = __spi_send_byte(CMD_NOP);
+    info->devID = __spi_send_byte(CMD_NOP);
     CS_HIGH();
 
     // read JEDEC info
     CS_LOW();
-    SPI_SendByte(CMD_RD_JEDEC_ID);
-    SPI_SendByte(CMD_NOP);
-    info->memType = SPI_SendByte(CMD_NOP);
-    info->capacity = SPI_SendByte(CMD_NOP);
+    __spi_send_byte(CMD_RD_JEDEC_ID);
+    __spi_send_byte(CMD_NOP);
+    info->memType = __spi_send_byte(CMD_NOP);
+    info->capacity = __spi_send_byte(CMD_NOP);
     CS_HIGH();
 
     // read unique ID
     CS_LOW();
-    SPI_SendByte(CMD_RD_UNIQUE_ID);
+    __spi_send_byte(CMD_RD_UNIQUE_ID);
     // Dummy 4 byte
-    SPI_SendByte(CMD_NOP);
-    SPI_SendByte(CMD_NOP);
-    SPI_SendByte(CMD_NOP);
-    SPI_SendByte(CMD_NOP);
+    __spi_send_byte(CMD_NOP);
+    __spi_send_byte(CMD_NOP);
+    __spi_send_byte(CMD_NOP);
+    __spi_send_byte(CMD_NOP);
     // 64 bit data
-    info->uniqueID[0] = SPI_SendByte(CMD_NOP);
-    info->uniqueID[1] = SPI_SendByte(CMD_NOP);
-    info->uniqueID[2] = SPI_SendByte(CMD_NOP);
-    info->uniqueID[3] = SPI_SendByte(CMD_NOP);
-    info->uniqueID[4] = SPI_SendByte(CMD_NOP);
-    info->uniqueID[5] = SPI_SendByte(CMD_NOP);
-    info->uniqueID[6] = SPI_SendByte(CMD_NOP);
-    info->uniqueID[7] = SPI_SendByte(CMD_NOP);
+    info->uniqueID[0] = __spi_send_byte(CMD_NOP);
+    info->uniqueID[1] = __spi_send_byte(CMD_NOP);
+    info->uniqueID[2] = __spi_send_byte(CMD_NOP);
+    info->uniqueID[3] = __spi_send_byte(CMD_NOP);
+    info->uniqueID[4] = __spi_send_byte(CMD_NOP);
+    info->uniqueID[5] = __spi_send_byte(CMD_NOP);
+    info->uniqueID[6] = __spi_send_byte(CMD_NOP);
+    info->uniqueID[7] = __spi_send_byte(CMD_NOP);
     CS_HIGH();
 }
