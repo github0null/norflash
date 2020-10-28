@@ -234,8 +234,15 @@ uint8_t W25QXX_WriteByte(uint32_t addr, uint8_t dat)
 
 uint16_t W25QXX_ReadWord(uint32_t addr)
 {
-    uint16_t dat = W25QXX_ReadByte(addr + 1);
-    return (dat << 8) | (uint16_t)W25QXX_ReadByte(addr);
+    uint16_t dat;
+    WaitBusy();
+    CS_LOW();
+    __spi_send_byte(CMD_RD_DATA);
+    SendAddr(addr);
+    dat = __spi_send_byte(CMD_NOP);
+    dat |= ((uint16_t)__spi_send_byte(CMD_NOP) << 8);
+    CS_HIGH();
+    return dat;
 }
 
 uint8_t W25QXX_WriteWord(uint32_t addr, uint16_t word)
