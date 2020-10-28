@@ -4,6 +4,10 @@
 #include <W25QXX_conf.h>
 #include <stdint.h>
 
+#ifndef W25QXX_WRITE_NO_CHECK 
+#include <stdlib.h>
+#endif
+
 /**
  * *****************************************************
  * 
@@ -125,9 +129,9 @@ void W25QXX_ReadBytes(uint32_t addr, uint8_t *buf, uint32_t size);
  * write operations
 */
 
-void W25QXX_WriteByte(uint32_t addr, uint8_t dat);
-void W25QXX_WriteWord(uint32_t addr, uint16_t word);
-void W25QXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t len);
+uint8_t W25QXX_WriteByte(uint32_t addr, uint8_t dat);
+uint8_t W25QXX_WriteWord(uint32_t addr, uint16_t word);
+uint8_t W25QXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t len);
 void W25QXX_Erase(uint32_t addr, W25QXX_EraseType type);
 
 /**

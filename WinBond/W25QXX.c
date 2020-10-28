@@ -139,9 +139,15 @@ uint8_t IsEmptySector(uint32_t addr, uint32_t size)
     return true;
 }
 
-void W25QXX_WritePage(uint32_t addr, uint8_t *buf, uint16_t size)
+uint8_t W25QXX_WritePage(uint32_t addr, uint8_t *buf, uint16_t size)
 {
     uint16_t index;
+
+#ifndef W25QXX_WRITE_NO_CHECK
+    uint16_t sampleNum = rand() % (size > 4 ? (size >> 2) : size); // sample number: 1/4 data size
+    uint16_t sampleIndex;
+#endif
+
     WaitBusy();
     EnableWrite();
     CS_LOW();
@@ -150,6 +156,18 @@ void W25QXX_WritePage(uint32_t addr, uint8_t *buf, uint16_t size)
     for (index = 0; index < size; index++)
         __spi_send_byte(buf[index]);
     CS_HIGH();
+
+// check data
+#ifndef W25QXX_WRITE_NO_CHECK
+    for (index = 0; index < sampleNum; index++)
+    {
+        sampleIndex = rand() % size; // get a random index
+        if (W25QXX_ReadByte(addr + sampleIndex) != buf[sampleIndex])
+            return false;
+    }
+#endif
+
+    return true;
 }
 
 //-----------------------------------------------
@@ -194,7 +212,7 @@ uint8_t W25QXX_ReadByte(uint32_t addr)
     return dat;
 }
 
-void W25QXX_WriteByte(uint32_t addr, uint8_t dat)
+uint8_t W25QXX_WriteByte(uint32_t addr, uint8_t dat)
 {
     if (!IsEmptyPage(addr)) // is not a empty page
         W25QXX_Erase(addr, W25QXX_ERASE_SECTOR);
@@ -206,6 +224,12 @@ void W25QXX_WriteByte(uint32_t addr, uint8_t dat)
     SendAddr(addr);
     __spi_send_byte(dat);
     CS_HIGH();
+
+#ifndef W25QXX_WRITE_NO_CHECK
+    return W25QXX_ReadByte(addr) == dat;
+#else
+    return true;
+#endif
 }
 
 uint16_t W25QXX_ReadWord(uint32_t addr)
@@ -214,12 +238,12 @@ uint16_t W25QXX_ReadWord(uint32_t addr)
     return (dat << 8) | (uint16_t)W25QXX_ReadByte(addr);
 }
 
-void W25QXX_WriteWord(uint32_t addr, uint16_t word)
+uint8_t W25QXX_WriteWord(uint32_t addr, uint16_t word)
 {
     uint8_t buf[2];
     buf[0] = (uint8_t)word;
     buf[1] = (uint8_t)(word >> 8);
-    W25QXX_WriteBytes(addr, buf, 2);
+    return W25QXX_WriteBytes(addr, buf, 2);
 }
 
 void W25QXX_ReadBytes(uint32_t addr, uint8_t *buf, uint32_t size)
@@ -238,7 +262,7 @@ void W25QXX_ReadBytes(uint32_t addr, uint8_t *buf, uint32_t size)
     CS_HIGH();
 }
 
-void W25QXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t size)
+uint8_t W25QXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t size)
 {
     uint16_t pageRemain = PAGE_SIZE - (addr % PAGE_SIZE);
     uint32_t sectorRemain = SECTOR_SIZE - (addr % SECTOR_SIZE);
@@ -278,7 +302,8 @@ void W25QXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t size)
 
     while (1)
     {
-        W25QXX_WritePage(addr, buf, pageRemain);
+        if (W25QXX_WritePage(addr, buf, pageRemain) == false)
+            return false;
 
         if (size == pageRemain)
         {
@@ -297,6 +322,8 @@ void W25QXX_WriteBytes(uint32_t addr, uint8_t *buf, uint32_t size)
                 pageRemain = size;
         }
     }
+
+    return true;
 }
 
 void W25QXX_Erase(uint32_t addr, W25QXX_EraseType type)
